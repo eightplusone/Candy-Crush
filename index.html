@@ -1,7 +1,7 @@
 <!--
 CandyCrush
 Your Name: Hai Tran
-Collaborators:
+Collaborators: N/A
 -->
 <!DOCTYPE html>
 <html>
@@ -62,10 +62,11 @@ $.extend({
 });
 
 // constants
-var DEFAULT_BOARD_SIZE = 8;
+var DEFAULT_boardSize = 8;
 var TABLE_HEIGHT = 320;
 var COLUMN_NAME = ["a", "b", "c", "d", "e", "f", "g", "h"];
 var ROW_NAME = [1, 2, 3, 4, 5, 6, 7, 8];
+var IS_DEBUGGING = true;
 
 // data model at global scope for easier debugging
 var board;
@@ -75,30 +76,31 @@ var rules;
 if ($.getUrlVar('size') && $.getUrlVar('size') >= 3) {
   board = new Board($.getUrlVar('size'));
 } else {
-  board = new Board(DEFAULT_BOARD_SIZE);
+  board = new Board(DEFAULT_boardSize);
 }
 
-var board_size = board.getSize();
+var boardSize = board.getSize();
+var cellLocation = "";
 
 // load a rule
 rules = new Rules(board);
 
+
 // Replace the placeholder in the middle column with the actual game table.
 // Fill each cell of the table with the according candy.
-var fillTableWithCandies = function() {
+var updateCandyLocation = function() {
   var tableHolder = document.getElementById("tableHolder");
   var gameTable = document.createElement("table");
 
   gameTable.id = "tableHolder";
-  //gameTable.style.border = "1px solid black";
-  gameTable.style.height = board_size;
-  gameTable.style.width = board_size;
+  gameTable.style.height = boardSize;
+  gameTable.style.width = boardSize;
 
-  for (var i = 1; i <= board_size; i++) {
+  for (var i = 1; i <= boardSize; i++) {
     var tr = gameTable.insertRow();
-    tr.style.height = TABLE_HEIGHT/board_size;
+    tr.style.height = TABLE_HEIGHT/boardSize;
 
-    for (var j = 0; j < board_size; j++) {
+    for (var j = 0; j < boardSize; j++) {
       if (board.getCandyAt(i-1, j)) {
         var td = tr.insertCell();
         var bgcolor = board.getCandyAt(i-1, j).color;
@@ -106,10 +108,11 @@ var fillTableWithCandies = function() {
         td.style.backgroundColor = bgcolor;
         td.id = COLUMN_NAME[i-1] + ROW_NAME[j].toString();
 
+        // Yellow background should go with black text for readability.
         if (bgcolor == "yellow") {
-          td.innerHTML = "<div style='width: " + TABLE_HEIGHT/board_size + "px;' align='center'><font color='black'><b>" + COLUMN_NAME[i-1] + ROW_NAME[j].toString() + "</b></font></div>";
+          td.innerHTML = "<div style='width: " + TABLE_HEIGHT/boardSize + "px;' align='center'><font color='black'><b>" + COLUMN_NAME[i-1] + ROW_NAME[j].toString() + "</b></font></div>";
         } else {
-          td.innerHTML = "<div style='width: " + TABLE_HEIGHT/board_size + "px;' align='center'><font color='white'><b>" + COLUMN_NAME[i-1] + ROW_NAME[j].toString() + "</b></font></div>";
+          td.innerHTML = "<div style='width: " + TABLE_HEIGHT/boardSize + "px;' align='center'><font color='white'><b>" + COLUMN_NAME[i-1] + ROW_NAME[j].toString() + "</b></font></div>";
         }
       }
     }
@@ -118,18 +121,35 @@ var fillTableWithCandies = function() {
   tableHolder.parentNode.replaceChild(gameTable, tableHolder);
 }
 
-var lockButtons = function() {
-  $("#btnUpArrow").attr("disabled", "disabled");
-  $("#btnDownArrow").attr("disabled", "disabled");
-  $("#btnLeftArrow").attr("disabled", "disabled");
-  $("#btnRightArrow").attr("disabled", "disabled");
+
+// Disable all arrow buttons at the beginning and when there is no possible move (including invalid input).
+var lockArrowButtons = function() {
+    $("#btnUpArrow").prop("disabled", true);
+    $("#btnDownArrow").prop("disabled", true);
+    $("#btnLeftArrow").prop("disabled", true);
+    $("#btnRightArrow").prop("disabled", true);
+    $("#btnCrushOnce").prop("disabled", true);
 }
 
-var unlockButtons = function() {
-  $("#btnUpArrow").removeAttr("disabled");
-  $("#btnDownArrow").removeAttr("disabled");
-  $("#btnLeftArrow").removeAttr("disabled");
-  $("#btnRightArrow").removeAttr("disabled");
+// Check if user's input is valid (column ranges from "a" to "g", row ranges from 1 to 8, input contains exactly two characters)
+var validateMoveInput = function(cellLocation) {
+  return (cellLocation.length == 2 && COLUMN_NAME.indexOf(cellLocation[0].toLowerCase()) != -1 && parseInt(cellLocation[1]) > 0 && parseInt(cellLocation[1]) < 9);
+}
+
+// Flip two candies
+var moveCandy = function(columnName, rowName, direction) {
+  if (IS_DEBUGGING) console.log(COLUMN_NAME[columnName] + (rowName+1).toString() + ", " + direction);
+
+  var selectedCandy = board.getCandyAt(columnName, rowName);
+  var targetCandy = board.getCandyInDirection(selectedCandy, direction);
+  board.flipCandies(selectedCandy, targetCandy);
+}
+
+// After a move is done, clear the user's input and re-focus on the text field.
+var clearAndFocusTextField = function() {
+  $("#cellLocation").val("");
+  $("#cellLocation").focus();
+  cellLocation = "";
 }
 
 // Final initialization entry point: the Javascript code inside this block
@@ -138,7 +158,8 @@ $(document).ready(function()
 {
   // Your code here.
   rules.prepareNewGame();
-  fillTableWithCandies();
+  updateCandyLocation();
+  lockArrowButtons();
 });
 
 
@@ -170,39 +191,97 @@ $(board).on('scoreUpdate', function(e, info)
 });
 
 // Button Events
-$(document).on('click', "btnNewGame", function(evt)
+$(document).on('click', "#btnNewGame", function(evt)
 {
   // Your code here.
+  board.clear();
+  rules.prepareNewGame();
+  updateCandyLocation();
+  lockArrowButtons();
+  if (IS_DEBUGGING) console.log("btnNewGame clicked.");
 });
 
-$(document).on('click', "btnUpArrow", function(evt)
+
+$(document).on('click', "#btnUpArrow", function(evt)
 {
   // Your code here.
+  if (validateMoveInput(cellLocation)) {
+    moveCandy(COLUMN_NAME.indexOf(cellLocation[0]), parseInt(cellLocation[1])-1, "up");
+    updateCandyLocation();
+    clearAndFocusTextField();
+    lockArrowButtons();
+  }
+  if (IS_DEBUGGING) console.log("btnUpArrow clicked.");
 });
 
-$(document).on('click', "btnDownArrow", function(evt)
+
+$(document).on('click', "#btnDownArrow", function(evt)
 {
   // Your code here.
+  if (validateMoveInput(cellLocation)) {
+    moveCandy(COLUMN_NAME.indexOf(cellLocation[0]), parseInt(cellLocation[1])-1, "down");
+    updateCandyLocation();
+    clearAndFocusTextField();
+    lockArrowButtons();
+  }
+  if (IS_DEBUGGING) console.log("btnDownArrow clicked.");
 });
 
-$(document).on('click', "btnLeftArrow", function(evt)
+
+$(document).on('click', "#btnLeftArrow", function(evt)
 {
   // Your code here.
+  if (validateMoveInput(cellLocation)) {
+    moveCandy(COLUMN_NAME.indexOf(cellLocation[0]), parseInt(cellLocation[1])-1, "left");
+    updateCandyLocation();
+    clearAndFocusTextField();
+    lockArrowButtons();
+  }
+  if (IS_DEBUGGING) console.log("btnLeftArrow clicked.");
 });
 
-$(document).on('click', "btnRightArrow", function(evt)
+
+$(document).on('click', "#btnRightArrow", function(evt)
 {
   // Your code here.
+  if (validateMoveInput(cellLocation)) {
+    moveCandy(COLUMN_NAME.indexOf(cellLocation[0]), parseInt(cellLocation[1])-1, "right");
+    updateCandyLocation();
+    clearAndFocusTextField();
+    lockArrowButtons();
+  }
+  if (IS_DEBUGGING) console.log("btnRightArrow clicked.");
 });
 
-$(document).on('click', "btnCrushOnce", function(evt)
+
+$(document).on('click', "#btnCrushOnce", function(evt)
 {
   // Your code here.
+  if (IS_DEBUGGING) console.log("btnCrushOnce clicked.");
 });
+
 
 // keyboard events arrive here
 $(document).on('keydown', function(evt) {
   // Your code here.
+});
+
+
+$(document).on("keyup blur change", function(evt) {
+  // Your code here.
+  cellLocation = $("#cellLocation").val();
+
+  if (validateMoveInput(cellLocation)) {
+    var selectedCandy = board.getCandyAt(COLUMN_NAME.indexOf(cellLocation[0]), parseInt(cellLocation[1])-1);
+
+    if (rules.isMoveTypeValid(selectedCandy, "up")) $("#btnUpArrow").prop("disabled", false);
+    if (rules.isMoveTypeValid(selectedCandy, "down")) $("#btnDownArrow").prop("disabled", false);
+    if (rules.isMoveTypeValid(selectedCandy, "left")) $("#btnLeftArrow").prop("disabled", false);
+    if (rules.isMoveTypeValid(selectedCandy, "right")) $("#btnRightArrow").prop("disabled", false);
+
+  } else {
+    lockArrowButtons();
+  }
 });
 
 
@@ -220,10 +299,10 @@ $(document).on('keydown', function(evt) {
       
         <!-- Column 1 Code Here -->
         <div class="row justify-content-center">
-          <h1 class="text-danger"><b>Candy<br>Crush</b></h1>
+          <h1 class="text-danger" align="center"><b>Candy<br>Crush</b></h1>
         </div>
         <div class="row justify-content-center">
-          <input type="btn" class="btn btn-info col-6" value="New Game" id="btnNewGame">
+          <input type="button" class="btn btn-primary col-6" value="New Game" id="btnNewGame">
         </div>
 
       </div>
@@ -241,23 +320,23 @@ $(document).on('keydown', function(evt) {
       <!-- Column 3 Code Here -->
       <div class="row justify-content-center">
         <label for="move" class="col-4">Move:</label>
-        <input type="text" class="form-control col-md-4" id="cellLocation">
+        <input type="text" class="col-md-4" id="cellLocation">
       </div>
 
       <div class="row justify-content-center">
-        <input type="btn" class="btn btn-info col-3 col-offset-4 disabled" value="Up" id="btnUpArrow">
+        <input type="button" class="btn btn-primary col-3 col-offset-4" value="Up" id="btnUpArrow">
       </div>
       <div class="row justify-content-center">
-        <input type="btn" class="btn btn-info col-3 disabled" value="Left" id="btnLeftArrow">
-        <input type="btn" class="btn btn-info col-3 col-offset-8 disabled" value="Right" id="btnRightArrow">
+        <input type="button" class="btn btn-primary col-3" value="Left" id="btnLeftArrow">
+        <input type="button" class="btn btn-primary col-3 col-offset-8" value="Right" id="btnRightArrow">
       </div>
       <div class="row justify-content-center">
-        <input type="btn" class="btn btn-info col-3 col-offset-4 disabled" value="Down" id="btnDownArrow">
+        <input type="button" class="btn btn-primary col-3 col-offset-4" value="Down" id="btnDownArrow">
       </div>
+      
 
-
       <div class="row justify-content-center">
-        <input type="btn" class="btn btn-info col-6 disabled" value="Crush Once" id="btnCrushOnce">
+        <input type="button" class="btn btn-primary col-6" value="Crush Once" id="btnCrushOnce">
       </div>
 
   </div> <!-- class="row" -->
