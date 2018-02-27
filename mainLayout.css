@@ -3,9 +3,35 @@
  */
 
 /* REMOVE ME - dashed lines and height for debugging */
+/*
 #mainColumn {
   outline: 1px dashed orange;
   height: 200px;
 }
+*/
 
 /* Your css code here! */
+body {
+	margin-top: 10px;
+}
+
+#btnNewGame {
+	margin: 10px;
+}
+
+#arrows {
+	margin-top: 10px;
+}
+
+#crush {
+	margin-top: 10px;
+}
+
+#tableHolder {
+	max-height: 320px;
+	height: 320px;
+	width: 320px;
+	margin: 0px auto;
+	overflow: hidden;
+	table-layout: fixed;
+}
