@@ -63,6 +63,9 @@ $.extend({
 
 // constants
 var DEFAULT_BOARD_SIZE = 8;
+var TABLE_HEIGHT = 320;
+var COLUMN_NAME = ["a", "b", "c", "d", "e", "f", "g", "h"];
+var ROW_NAME = [1, 2, 3, 4, 5, 6, 7, 8];
 
 // data model at global scope for easier debugging
 var board;
@@ -75,14 +78,67 @@ if ($.getUrlVar('size') && $.getUrlVar('size') >= 3) {
   board = new Board(DEFAULT_BOARD_SIZE);
 }
 
+var board_size = board.getSize();
+
 // load a rule
 rules = new Rules(board);
+
+// Replace the placeholder in the middle column with the actual game table.
+// Fill each cell of the table with the according candy.
+var fillTableWithCandies = function() {
+  var tableHolder = document.getElementById("tableHolder");
+  var gameTable = document.createElement("table");
+
+  gameTable.id = "tableHolder";
+  //gameTable.style.border = "1px solid black";
+  gameTable.style.height = board_size;
+  gameTable.style.width = board_size;
+
+  for (var i = 1; i <= board_size; i++) {
+    var tr = gameTable.insertRow();
+    tr.style.height = TABLE_HEIGHT/board_size;
+
+    for (var j = 0; j < board_size; j++) {
+      if (board.getCandyAt(i-1, j)) {
+        var td = tr.insertCell();
+        var bgcolor = board.getCandyAt(i-1, j).color;
+        td.style.border = "1px solid white";
+        td.style.backgroundColor = bgcolor;
+        td.id = COLUMN_NAME[i-1] + ROW_NAME[j].toString();
+
+        if (bgcolor == "yellow") {
+          td.innerHTML = "<div style='width: " + TABLE_HEIGHT/board_size + "px;' align='center'><font color='black'><b>" + COLUMN_NAME[i-1] + ROW_NAME[j].toString() + "</b></font></div>";
+        } else {
+          td.innerHTML = "<div style='width: " + TABLE_HEIGHT/board_size + "px;' align='center'><font color='white'><b>" + COLUMN_NAME[i-1] + ROW_NAME[j].toString() + "</b></font></div>";
+        }
+      }
+    }
+  }
+
+  tableHolder.parentNode.replaceChild(gameTable, tableHolder);
+}
+
+var lockButtons = function() {
+  $("#btnUpArrow").attr("disabled", "disabled");
+  $("#btnDownArrow").attr("disabled", "disabled");
+  $("#btnLeftArrow").attr("disabled", "disabled");
+  $("#btnRightArrow").attr("disabled", "disabled");
+}
+
+var unlockButtons = function() {
+  $("#btnUpArrow").removeAttr("disabled");
+  $("#btnDownArrow").removeAttr("disabled");
+  $("#btnLeftArrow").removeAttr("disabled");
+  $("#btnRightArrow").removeAttr("disabled");
+}
 
 // Final initialization entry point: the Javascript code inside this block
 // runs at the end of start-up when the page has finished loading.
 $(document).ready(function()
 {
   // Your code here.
+  rules.prepareNewGame();
+  fillTableWithCandies();
 });
 
 
@@ -114,7 +170,32 @@ $(board).on('scoreUpdate', function(e, info)
 });
 
 // Button Events
-$(document).on('click', "#buttonIDhere", function(evt)
+$(document).on('click', "btnNewGame", function(evt)
+{
+  // Your code here.
+});
+
+$(document).on('click', "btnUpArrow", function(evt)
+{
+  // Your code here.
+});
+
+$(document).on('click', "btnDownArrow", function(evt)
+{
+  // Your code here.
+});
+
+$(document).on('click', "btnLeftArrow", function(evt)
+{
+  // Your code here.
+});
+
+$(document).on('click', "btnRightArrow", function(evt)
+{
+  // Your code here.
+});
+
+$(document).on('click', "btnCrushOnce", function(evt)
 {
   // Your code here.
 });
@@ -136,39 +217,49 @@ $(document).on('keydown', function(evt) {
   <div class="row">
     <div class="col-md-3" id="firstColumn">
       <div>
+      
         <!-- Column 1 Code Here -->
-        <p>Candy Crush</p>
-        <input type="btn" class="btn" value="New Game" color="blue">
+        <div class="row justify-content-center">
+          <h1 class="text-danger"><b>Candy<br>Crush</b></h1>
+        </div>
+        <div class="row justify-content-center">
+          <input type="btn" class="btn btn-info col-6" value="New Game" id="btnNewGame">
+        </div>
+
       </div>
   </div>
 
-    <div class="col-md-6" id="mainColumn">
+    <div class="col-md-6" align="center" id="mainColumn">
+      
       <!-- Column 2 Code Here -->
-      <table>
-        <tr>
-          <td></td>
-          <td></td>
-          <td></td>
-        </tr>
-        <tr>
-          <td></td>
-          <td></td>
-          <td></td>
-        </tr>
-        <tr>
-          <td></td>
-          <td></td>
-          <td></td>
-        </tr>
-      </table>
+      <table id="tableHolder" width="320" height="320"></table>
+    
     </div>
 
     <div class="col-md-3" id="lastColumn">
 
       <!-- Column 3 Code Here -->
-      Column 3
+      <div class="row justify-content-center">
+        <label for="move" class="col-4">Move:</label>
+        <input type="text" class="form-control col-md-4" id="cellLocation">
+      </div>
 
-    </div>
+      <div class="row justify-content-center">
+        <input type="btn" class="btn btn-info col-3 col-offset-4 disabled" value="Up" id="btnUpArrow">
+      </div>
+      <div class="row justify-content-center">
+        <input type="btn" class="btn btn-info col-3 disabled" value="Left" id="btnLeftArrow">
+        <input type="btn" class="btn btn-info col-3 col-offset-8 disabled" value="Right" id="btnRightArrow">
+      </div>
+      <div class="row justify-content-center">
+        <input type="btn" class="btn btn-info col-3 col-offset-4 disabled" value="Down" id="btnDownArrow">
+      </div>
+
+
+      <div class="row justify-content-center">
+        <input type="btn" class="btn btn-info col-6 disabled" value="Crush Once" id="btnCrushOnce">
+      </div>
+
   </div> <!-- class="row" -->
 </div> <!-- class="container" -->
 
