@@ -350,6 +350,15 @@ let gameboard = document.createElement("custom");
 let custom = d3.select(gameboard);
 
 let cell_data = [];
+d3.range(boardSize*boardSize).forEach(function(cell){
+  let rowNum = cell/boardSize;
+  let colNum = cell - boardSize*rowNum;
+  data.push([
+    x: ROW_NAME[rowNum], 
+    y: COLUMN_NAME[colNum]
+  ]);
+});
+
 binddata(cell_data);
 
 function binddata(cell_data) {
