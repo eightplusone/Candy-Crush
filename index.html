@@ -30,6 +30,7 @@ I discussed this assignment with nobody.
 <!-- Load any supplemental Javascript libraries here -->
 <script src=
   "https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script src="https://d3js.org/d3.v4.min.js"></script>
 <script src=
   "https://cdnjs.cloudflare.com/ajax/libs/seedrandom/2.4.2/seedrandom.js">
 </script>
@@ -66,8 +67,8 @@ $.extend({
 // constants
 var DEFAULT_boardSize = 8;
 var TABLE_HEIGHT = 320;
-var COLUMN_NAME = ["a", "b", "c", "d", "e", "f", "g", "h"];
-var ROW_NAME = [1, 2, 3, 4, 5, 6, 7, 8];
+var COLUMN_NAME = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t"];
+var ROW_NAME = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
 var IS_DEBUGGING = false;
 
 // data model at global scope for easier debugging
@@ -87,42 +88,10 @@ rules = new Rules(board);
 var boardSize = board.getSize();
 var cellLocation = "";  // User input
 
-
 // Replace the placeholder in the middle column with the actual game table.
 // Fill each cell of the table with the according candy.
 var updateCandyLocation = function() {
-  var tableHolder = document.getElementById("tableHolder");
-  var gameTable = document.createElement("table");
-
-  gameTable.id = "tableHolder";
-  gameTable.style.height = boardSize;
-  gameTable.style.width = boardSize;
-
-  for (var i = 1; i <= boardSize; i++) {
-    var tr = gameTable.insertRow();
-    tr.style.height = TABLE_HEIGHT/boardSize;
-
-    for (var j = 0; j < boardSize; j++) {
-      if (board.getCandyAt(i-1, j)) {
-        var td = tr.insertCell();
-        var bgcolor = board.getCandyAt(i-1, j).color;
-        td.style.border = "1px solid white";
-        td.style.backgroundColor = bgcolor;
-        td.id = COLUMN_NAME[i-1] + ROW_NAME[j].toString();
-
-        // Yellow background should go with black text for readability.
-        if (bgcolor == "yellow") {
-          td.innerHTML = "<div style='width: " + TABLE_HEIGHT/boardSize + "px;' align='center'><font color='black'><b>" + COLUMN_NAME[i-1] + ROW_NAME[j].toString() + "</b></font></div>";
-        } else {
-          td.innerHTML = "<div style='width: " + TABLE_HEIGHT/boardSize + "px;' align='center'><font color='white'><b>" + COLUMN_NAME[i-1] + ROW_NAME[j].toString() + "</b></font></div>";
-        }
-      }
-    }
-  }
-
-  tableHolder.parentNode.replaceChild(gameTable, tableHolder);
 }
-
 
 // Disable all arrow buttons at the beginning and when there is no possible move (including invalid input).
 var lockArrowButtons = function() {
@@ -328,40 +297,74 @@ $(document).on("keyup blur change", function(evt) {
       </div>
   </div>
 
-    <div class="col-md-6" align="center" id="mainColumn">
-      
-      <!-- Column 2 Code Here -->
-      <table id="tableHolder" width="320" height="320"></table>
-    
+  <div class="col-md-6" align="center" id="mainColumn">
+    <!-- Column 2 Code Here -->
+  </div>
+
+  <div class="col-md-3" id="lastColumn">
+
+    <!-- Column 3 Code Here -->
+    <div class="row justify-content-center">
+      <label for="move">Move:&nbsp;</label>
+      <input type="text" size="2" id="cellLocation">
     </div>
 
-    <div class="col-md-3" id="lastColumn">
+    <div class="row justify-content-center" id="arrows">
+      <input type="button" class="btn btn-primary col-3 col-offset-4" value="↑" id="btnUpArrow">
+    </div>
+    <div class="row justify-content-center">
+      <input type="button" class="btn btn-primary col-3" value="←" id="btnLeftArrow">
+      <input type="button" class="btn btn-primary col-3 col-offset-8" value="→" id="btnRightArrow">
+    </div>
+    <div class="row justify-content-center">
+      <input type="button" class="btn btn-primary col-3 col-offset-4" value="↓" id="btnDownArrow">
+    </div>
 
-      <!-- Column 3 Code Here -->
-      <div class="row justify-content-center">
-        <label for="move">Move:&nbsp;</label>
-        <input type="text" size="2" id="cellLocation">
-      </div>
-
-      <div class="row justify-content-center" id="arrows">
-        <input type="button" class="btn btn-primary col-3 col-offset-4" value="Up" id="btnUpArrow">
-      </div>
-      <div class="row justify-content-center">
-        <input type="button" class="btn btn-primary col-3" value="Left" id="btnLeftArrow">
-        <input type="button" class="btn btn-primary col-3 col-offset-8" value="Right" id="btnRightArrow">
-      </div>
-      <div class="row justify-content-center">
-        <input type="button" class="btn btn-primary col-3 col-offset-4" value="Down" id="btnDownArrow">
-      </div>
-
-
-      <div class="row justify-content-center" id="crush">
-        <input type="button" class="btn btn-primary col-6" value="Crush Once" id="btnCrushOnce">
-      </div>
+    <div class="row justify-content-center" id="crush">
+      <input type="button" class="btn btn-primary col-6" value="Crush Once" id="btnCrushOnce">
+    </div>
 
   </div> <!-- class="row" -->
 </div> <!-- class="container" -->
 
 </body>
+
+<script type="text/javascript">
+
+let canvas = d3.select("#mainColumn").append("canvas")
+  .attr("id", "gameboard")
+  .attr("width", 320)
+  .attr("height", 320)
+;
+
+let context = canvas.node().getContext("2d");
+console.log(context);
+
+let gameboard = [];
+let value = boardSize*boardSize;
+
+var data = [1,2,13,20,23];
+
+var scale = d3.scaleLinear()
+  .range([10, 390])
+  .domain([1,23]);
+
+data.forEach(function(d, i) {
+  context.beginPath();
+  context.rect(scale(d), 150, 10, 10);
+  context.fillStyle="red";
+  context.fill();
+  context.closePath();
+});
+
+canvas.append("rect")
+  .attr("x", 10)
+  .attr("y", 10)
+  .attr("width", 10)
+  .attr("height", 10)
+  .style("fill", "#ff0000")
+;
+
+</script>
 
 </html>
