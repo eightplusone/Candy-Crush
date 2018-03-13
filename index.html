@@ -88,11 +88,40 @@ rules = new Rules(board);
 
 var boardSize = board.getSize();
 var cellLocation = "";  // User input
+var cellSize = CANVAS_SIZE / boardSize;
+let context; 
 
-// Replace the placeholder in the middle column with the actual game table.
-// Fill each cell of the table with the according candy.
-var updateCandyLocation = function() {
+// Image file of each candy
+var blueCandy = new Image();
+var blueSpecial = new Image();
+var colorBomb = new Image();
+var greenCandy = new Image();
+var greenSpecial = new Image();
+var orangeCandy = new Image();
+var orangeSpecial = new Image();
+var purpleCandy = new Image();
+var purpleSpecial = new Image();
+var redCandy = new Image();
+var redSpecial = new Image();
+var yellowCandy = new Image();
+
+var initCandyImages = function() {
+  blueCandy.src = "graphics/blue-candy.png";
+  blueSpecial.src = "graphics/blue-special.png";
+  colorBomb.src = "graphics/color-bomb.png";
+  greenCandy.src = "graphics/green-candy.png";
+  greenSpecial.src = "graphics/green-special.png";
+  orangeCandy.src = "graphics/orange-candy.png";
+  orangeSpecial.src = "graphics/orange-special.png";
+  purpleCandy.src = "graphics/purple-candy.png";
+  purpleSpecial.src = "graphics/purple-special.png";
+  redCandy.src = "graphics/red-candy.png";
+  redSpecial.src = "graphics/red-special.png";
+  yellowCandy.src = "graphics/yellow-candy.png";
+
+  window.requestAnimationFrame(updateCandyLocation);
 }
+
 
 // Disable all arrow buttons at the beginning and when there is no possible move (including invalid input).
 var lockArrowButtons = function() {
@@ -124,6 +153,17 @@ var clearAndFocusTextField = function() {
   cellLocation = "";
 }
 
+var updateCandyLocation = function() {
+  for (var i = 0; i < boardSize; i++) {
+    for (var j = 0; j < boardSize; j++) {
+      console.log("graphics/" + board.getCandyAt(i,j).color + "-candy.png");
+      
+    }
+  }
+  console.log(context);
+  context.drawImage(blueCandy, 0, 0, 20, 20); 
+}
+
 // Group functions that are called together at the end of each flip or crush.
 //  - Update the latest position of each candy.
 //  - Clear any value in the text field and re-focus to it.
@@ -133,6 +173,7 @@ var updateBoard = function() {
   updateCandyLocation();
   clearAndFocusTextField();
   lockArrowButtons();
+
   if (rules.getCandyCrushes().length > 0) $("#btnCrushOnce").prop("disabled", false);
 } 
 
@@ -142,6 +183,10 @@ $(document).ready(function()
 {
   // Your code here.
   rules.prepareNewGame();
+  
+  initCandyImages();
+  context = document.getElementById("canvas").getContext("2d");
+  
   updateBoard();
 });
 
@@ -300,6 +345,7 @@ $(document).on("keyup blur change", function(evt) {
 
   <div class="col-md-6" align="center" id="mainColumn">
     <!-- Column 2 Code Here -->
+    <canvas id="canvas" width="320px" height="320px"></canvas>
   </div>
 
   <div class="col-md-3" id="lastColumn">
@@ -329,55 +375,5 @@ $(document).on("keyup blur change", function(evt) {
 </div> <!-- class="container" -->
 
 </body>
-
-<script type="text/javascript">
-/* 
- * Reference: "d3 canvas tutorial" at 
- * http://blockbuilder.org/larsvers/d187337850d58a444082841c739985ca
- */
-
-let canvas = d3.select("#mainColumn").append("canvas")
-  .attr("id", "gameboard")
-  .attr("width", CANVAS_SIZE)
-  .attr("height", CANVAS_SIZE)
-;
-
-let context = canvas.node().getContext("2d");
-context.fillStyle = "#ddd";
-context.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
-
-let gameboard = document.createElement("custom");
-let custom = d3.select(gameboard);
-
-let cell_data = [];
-d3.range(boardSize*boardSize).forEach(function(cell){
-  let rowNum = cell/boardSize;
-  let colNum = cell - boardSize*rowNum;
-  data.push([
-    x: ROW_NAME[rowNum], 
-    y: COLUMN_NAME[colNum]
-  ]);
-});
-
-binddata(cell_data);
-
-function binddata(cell_data) {
-
-}
-
-function draw() {
-  let elements = custom.selectAll("custom.rect");
-
-  elements.each(function(d,i) {
-
-    // for each virtual/custom element...
-    var node = d3.select(this);
-    context.fillStyle = node.attr('fillStyle');
-    context.fillRect(node.attr('x'), node.attr('y'), node.attr('width'), node.attr('height'))
-
-  });
-}
-
-</script>
 
 </html>
