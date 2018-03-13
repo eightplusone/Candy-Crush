@@ -67,6 +67,7 @@ $.extend({
 // constants
 var DEFAULT_boardSize = 8;
 var TABLE_HEIGHT = 320;
+var CANVAS_SIZE = 320;
 var COLUMN_NAME = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t"];
 var ROW_NAME = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
 var IS_DEBUGGING = false;
@@ -330,40 +331,43 @@ $(document).on("keyup blur change", function(evt) {
 </body>
 
 <script type="text/javascript">
+/* 
+ * Reference: "d3 canvas tutorial" at 
+ * http://blockbuilder.org/larsvers/d187337850d58a444082841c739985ca
+ */
 
 let canvas = d3.select("#mainColumn").append("canvas")
   .attr("id", "gameboard")
-  .attr("width", 320)
-  .attr("height", 320)
+  .attr("width", CANVAS_SIZE)
+  .attr("height", CANVAS_SIZE)
 ;
 
 let context = canvas.node().getContext("2d");
-console.log(context);
+context.fillStyle = "#ddd";
+context.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
 
-let gameboard = [];
-let value = boardSize*boardSize;
+let gameboard = document.createElement("custom");
+let custom = d3.select(gameboard);
 
-var data = [1,2,13,20,23];
+let cell_data = [];
+binddata(cell_data);
 
-var scale = d3.scaleLinear()
-  .range([10, 390])
-  .domain([1,23]);
+function binddata(cell_data) {
 
-data.forEach(function(d, i) {
-  context.beginPath();
-  context.rect(scale(d), 150, 10, 10);
-  context.fillStyle="red";
-  context.fill();
-  context.closePath();
-});
+}
 
-canvas.append("rect")
-  .attr("x", 10)
-  .attr("y", 10)
-  .attr("width", 10)
-  .attr("height", 10)
-  .style("fill", "#ff0000")
-;
+function draw() {
+  let elements = custom.selectAll("custom.rect");
+
+  elements.each(function(d,i) {
+
+    // for each virtual/custom element...
+    var node = d3.select(this);
+    context.fillStyle = node.attr('fillStyle');
+    context.fillRect(node.attr('x'), node.attr('y'), node.attr('width'), node.attr('height'))
+
+  });
+}
 
 </script>
 
