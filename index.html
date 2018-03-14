@@ -30,7 +30,6 @@ I discussed this assignment with nobody.
 <!-- Load any supplemental Javascript libraries here -->
 <script src=
   "https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
-<script src="https://d3js.org/d3.v4.min.js"></script>
 <script src=
   "https://cdnjs.cloudflare.com/ajax/libs/seedrandom/2.4.2/seedrandom.js">
 </script>
@@ -89,37 +88,18 @@ rules = new Rules(board);
 var boardSize = board.getSize();
 var cellLocation = "";  // User input
 var cellSize = CANVAS_SIZE / boardSize;
+console.log(cellSize);
 let context; 
 
-// Image file of each candy
-var blueCandy = new Image();
-var blueSpecial = new Image();
-var colorBomb = new Image();
-var greenCandy = new Image();
-var greenSpecial = new Image();
-var orangeCandy = new Image();
-var orangeSpecial = new Image();
-var purpleCandy = new Image();
-var purpleSpecial = new Image();
-var redCandy = new Image();
-var redSpecial = new Image();
-var yellowCandy = new Image();
-
 var initCandyImages = function() {
-  blueCandy.src = "graphics/blue-candy.png";
-  blueSpecial.src = "graphics/blue-special.png";
-  colorBomb.src = "graphics/color-bomb.png";
-  greenCandy.src = "graphics/green-candy.png";
-  greenSpecial.src = "graphics/green-special.png";
-  orangeCandy.src = "graphics/orange-candy.png";
-  orangeSpecial.src = "graphics/orange-special.png";
-  purpleCandy.src = "graphics/purple-candy.png";
-  purpleSpecial.src = "graphics/purple-special.png";
-  redCandy.src = "graphics/red-candy.png";
-  redSpecial.src = "graphics/red-special.png";
-  yellowCandy.src = "graphics/yellow-candy.png";
+  $("#canvas").prepend("<img id='blue-candy' src='graphics/blue-candy.png' />");
+  $("#canvas").prepend("<img id='green-candy' src='graphics/green-candy.png' />");
+  $("#canvas").prepend("<img id='orange-candy' src='graphics/orange-candy.png' />");
+  $("#canvas").prepend("<img id='purple-candy' src='graphics/purple-candy.png' />");
+  $("#canvas").prepend("<img id='red-candy' src='graphics/red-candy.png' />");
+  $("#canvas").prepend("<img id='yellow-candy' src='graphics/yellow-candy.png' />");
 
-  window.requestAnimationFrame(updateCandyLocation);
+  //window.requestAnimationFrame(updateCandyLocation);
 }
 
 
@@ -142,8 +122,10 @@ var moveCandy = function(columnName, rowName, direction) {
   if (IS_DEBUGGING) console.log(COLUMN_NAME[columnName] + (rowName+1).toString() + ", " + direction);
 
   var selectedCandy = board.getCandyAt(columnName, rowName);
+  //context.clearRect(0,0,CANVAS_SIZE, CANVAS_SIZE);
   var targetCandy = board.getCandyInDirection(selectedCandy, direction);
   board.flipCandies(selectedCandy, targetCandy);
+  //updateCandyLocation();
 }
 
 // After a move is done, clear the user's input and re-focus on the text field.
@@ -156,12 +138,11 @@ var clearAndFocusTextField = function() {
 var updateCandyLocation = function() {
   for (var i = 0; i < boardSize; i++) {
     for (var j = 0; j < boardSize; j++) {
-      console.log("graphics/" + board.getCandyAt(i,j).color + "-candy.png");
-      
+      let id = board.getCandyAt(i,j).color + "-candy";
+      let img = document.getElementById(id);
+      context.drawImage(img, i*cellSize, j*cellSize, cellSize, cellSize);
     }
   }
-  console.log(context);
-  context.drawImage(blueCandy, 0, 0, 20, 20); 
 }
 
 // Group functions that are called together at the end of each flip or crush.
@@ -182,12 +163,13 @@ var updateBoard = function() {
 $(document).ready(function()
 {
   // Your code here.
-  rules.prepareNewGame();
-  
+  console.log(board.square);
   initCandyImages();
   context = document.getElementById("canvas").getContext("2d");
-  
+  //board.clear();
+  rules.prepareNewGame();
   updateBoard();
+
 });
 
 
@@ -225,6 +207,7 @@ $(document).on('click', "#btnNewGame", function(evt)
   if (IS_DEBUGGING) console.log("btnNewGame clicked.");
 
   board.clear();
+  context.clearRect(0,0,CANVAS_SIZE, CANVAS_SIZE);
   rules.prepareNewGame();
   updateBoard();
 });
