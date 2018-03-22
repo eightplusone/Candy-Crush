@@ -54,6 +54,12 @@ let lastColor = "black";
 let suggestedMove = [-1, -1];
 let isShowingMove = false;
 
+let draggingStartMouseX = 0;
+let draggingStartMouseY = 0;
+let isDragging = false;
+let isDragged = new Array(boardSize);
+
+
 var initCandyImages = function() {
   $("#canvas").prepend("<img id='blue-candy' src='graphics/blue-candy.png' />");
   $("#canvas").prepend("<img id='green-candy' src='graphics/green-candy.png' />");
@@ -62,10 +68,7 @@ var initCandyImages = function() {
   $("#canvas").prepend("<img id='red-candy' src='graphics/red-candy.png' />");
   $("#canvas").prepend("<img id='yellow-candy' src='graphics/yellow-candy.png' />");
   $("#canvas").prepend("<img id='arrow' src='graphics/arrow.png' />");
-
-  //window.requestAnimationFrame(updateCandyLocation);
 }
-
 
 // Disable all arrow buttons at the beginning and when there is no possible move (including invalid input).
 var lockArrowButtons = function() {
@@ -142,8 +145,22 @@ $(document).ready(function()
   initCandyImages();
   canvas = document.getElementById("canvas");
   canvasOffset = $('#canvas').offset();
+
+  // listen for mouse events on canvas
+  canvas.onmousedown = canvasMouseDown;
+  canvas.onmouseup = canvasMouseUp;
+  canvas.onmousemove = canvasMouseMove;
+
   context = canvas.getContext("2d");
   context.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+
+  isDragging = false;
+  for (let i = 0; i < boardSize; i++) {
+    isDragged[i] = new Array(boardSize);
+    for (let j = 0; j < boardSize; j++) {
+      isDragged[i][j] = false;
+    }
+  }
 
   $("#score").css("background-color", "#000000");
   $("#score").css("color", "#ffffff");
@@ -167,20 +184,6 @@ $(board).on('move', function(e, info)
 {
   // Your code here.
   if (IS_DEBUGGING) console.log(e, info);
-
-  /*
-  $("#canvas").animate(
-    {}, { 
-      duration: 5000, 
-      easing: "linear", 
-      function() {
-        context.clearRect(info.fromRow*cellSize, info.fromCol*cellSize, info.toRow*cellSize, info.toCol*cellSize);
-      }
-  });
-  */
-
-  let candyDiv = document.createElement("div");
-  
   
 });
 
@@ -406,3 +409,15 @@ $(document).on('click', "#btnShowMove", function(evt) {
     removeSuggestedArrow(suggestedMove[0], suggestedMove[1]);
   }
 });
+
+function canvasMouseDown(e) {
+
+}
+
+function canvasMouseUp(e) {
+  
+}
+
+function canvasMouseMove(e) {
+  
+}
