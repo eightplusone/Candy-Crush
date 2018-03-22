@@ -53,12 +53,10 @@ let canvasOffset = 0;
 let lastColor = "black";
 let suggestedMove = [-1, -1];
 let isShowingMove = false;
-
 let draggingStartMouseX = 0;
 let draggingStartMouseY = 0;
 let isDragging = false;
 let isDragged = new Array(boardSize);
-
 
 var initCandyImages = function() {
   $("#canvas").prepend("<img id='blue-candy' src='graphics/blue-candy.png' />");
@@ -143,10 +141,12 @@ $(document).ready(function()
 {
   // Your code here.
   initCandyImages();
+  
+  // Canvas.
   canvas = document.getElementById("canvas");
-  canvasOffset = $('#canvas').offset();
+  console.log(canvas);
 
-  // listen for mouse events on canvas
+  // listen for mouse events on canvas.
   canvas.onmousedown = canvasMouseDown;
   canvas.onmouseup = canvasMouseUp;
   canvas.onmousemove = canvasMouseMove;
@@ -165,8 +165,14 @@ $(document).ready(function()
   $("#score").css("background-color", "#000000");
   $("#score").css("color", "#ffffff");
 
+  // Suggestion arrow
+  $("#suggestedArrow").attr("width", cellSize);
+  $("#suggestedArrow").hide();
+
   rules.prepareNewGame();
   updateBoard();
+
+  console.log($("#mainColumn"));
 });
 
 
@@ -212,7 +218,7 @@ $(document).on('click', "#btnNewGame", function(evt)
   // Your code here.
   if (IS_DEBUGGING) console.log("btnNewGame clicked.");
 
-  if (isShowingMove) removeSuggestedArrow(suggestedMove[0], suggestedMove[1]);
+  if (isShowingMove) removeSuggestedArrow();
 
   board.clear();
   board.resetScore();
@@ -232,7 +238,7 @@ $(document).on('click', "#btnUpArrow", function(evt)
   // Your code here.
   if (IS_DEBUGGING) console.log("btnUpArrow clicked.");
 
-  if (isShowingMove) removeSuggestedArrow(suggestedMove[0], suggestedMove[1]);
+  if (isShowingMove) removeSuggestedArrow();
 
   let col = COLUMN_NAME.indexOf(cellLocation[0]);
   let row = parseInt(cellLocation.substring(1, cellLocation.length))-1;
@@ -246,7 +252,7 @@ $(document).on('click', "#btnDownArrow", function(evt)
   // Your code here.
   if (IS_DEBUGGING) console.log("btnDownArrow clicked.");
 
-  if (isShowingMove) removeSuggestedArrow(suggestedMove[0], suggestedMove[1]);
+  if (isShowingMove) removeSuggestedArrow();
 
   let col = COLUMN_NAME.indexOf(cellLocation[0]);
   let row = parseInt(cellLocation.substring(1, cellLocation.length))-1;
@@ -260,7 +266,7 @@ $(document).on('click', "#btnLeftArrow", function(evt)
   // Your code here.
   if (IS_DEBUGGING) console.log("btnLeftArrow clicked.");
 
-  if (isShowingMove) removeSuggestedArrow(suggestedMove[0], suggestedMove[1]);
+  if (isShowingMove) removeSuggestedArrow();
 
   let col = COLUMN_NAME.indexOf(cellLocation[0]);
   let row = parseInt(cellLocation.substring(1, cellLocation.length))-1;
@@ -274,7 +280,7 @@ $(document).on('click', "#btnRightArrow", function(evt)
   // Your code here.
   if (IS_DEBUGGING) console.log("btnRightArrow clicked.");
 
-  if (isShowingMove) removeSuggestedArrow(suggestedMove[0], suggestedMove[1]);
+  if (isShowingMove) removeSuggestedArrow();
 
   let col = COLUMN_NAME.indexOf(cellLocation[0]);
   let row = parseInt(cellLocation.substring(1, cellLocation.length))-1;
@@ -289,7 +295,7 @@ $(document).on('click', "#btnCrushOnce", function(evt)
   // Your code here.
   if (IS_DEBUGGING) console.log("btnCrushOnce clicked.");
 
-  if (isShowingMove) removeSuggestedArrow(suggestedMove[0], suggestedMove[1]);
+  if (isShowingMove) removeSuggestedArrow();
 
   $("#cellLocation").prop("disabled", true);
 
@@ -346,6 +352,7 @@ $(document).on("keyup blur change", function(evt) {
 
 // Click a candy to select
 $(document).on('click', function(e) {
+  console.log(e);
   if (e.clientX >= canvasOffset.left && e.clientX <= canvasOffset.left + CANVAS_SIZE &&
     e.clientY >= canvasOffset.top && e.clientY <= canvasOffset.top + CANVAS_SIZE) {
 
@@ -356,6 +363,7 @@ $(document).on('click', function(e) {
     
     cellLocation = COLUMN_NAME[col] + ROW_NAME[row].toString();
     $("#cellLocation").val(cellLocation);
+    console.log(cellLocation);
     
     if (validateMoveInput(cellLocation)) {
       var selectedCandy = board.getCandyAt(row, col);
@@ -376,7 +384,8 @@ $(document).on('click', function(e) {
   }
 });
 
-let removeSuggestedArrow = function(row, col) {
+let removeSuggestedArrow = function() {
+  /*
   if (row > 0 && col > 0) {
     let leftCandy = board.getCandyAt(row, col-1);
     let suggestedCandy = board.getCandyAt(row, col);
@@ -391,6 +400,8 @@ let removeSuggestedArrow = function(row, col) {
     img = document.getElementById(suggestedCandy.color + "-candy");
     context.drawImage(img, col*cellSize, row*cellSize, cellSize, cellSize);
   }
+  */
+  $("#suggestedArrow").hide();
 
   isShowingMove = false;
 }
@@ -403,10 +414,14 @@ $(document).on('click', "#btnShowMove", function(evt) {
     let candy = rules.getRandomValidMove().candy;
     if (IS_DEBUGGING) console.log(candy);    
 
-    context.drawImage(arrow, (candy.col-0.5)*cellSize, candy.row*cellSize, cellSize, cellSize);
+    //context.drawImage(arrow, (candy.col-0.5)*cellSize, candy.row*cellSize, cellSize, cellSize);
+    $("#suggestedArrow").css("margin-left:" + ($("mainColumn").offsetLeft + (candy.col-0.5)*cellSize) + "px");
+    $("#suggestedArrow").css("margin-top:" + (candy.row*cellSize) + "px");
+    $("#suggestedArrow").show();
+
     isShowingMove = true;
   } else {
-    removeSuggestedArrow(suggestedMove[0], suggestedMove[1]);
+    removeSuggestedArrow();
   }
 });
 
