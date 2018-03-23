@@ -45,6 +45,7 @@ if ($.getUrlVar('size') && $.getUrlVar('size') >= 3) {
 rules = new Rules(board);
 
 var boardSize = board.getSize();
+let cellLocationTextarea;
 var cellLocation = "";  // User input
 var cellSize = CANVAS_SIZE / boardSize;
 let canvas;
@@ -142,11 +143,13 @@ $(document).ready(function()
 {
   // Your code here.
   initCandyImages();
+
+  cellLocationTextarea = $("#cellLocation");
   
   // Canvas.
   canvas = document.getElementById("canvas");
   canvasOffset = $('#canvas').offset();
-  if (IS_DEBUGGING) console.log(canvasOffset);
+  if (IS_DEBUGGING) console.log("Canvas offset top: " + canvasOffset.top + "\nCanvas offset left: " + canvasOffset.left);
 
   // Context.
   context = canvas.getContext("2d");
@@ -194,7 +197,7 @@ $(board).on('add', function(e, info)
 $(board).on('move', function(e, info)
 {
   // Your code here.
-  if (IS_DEBUGGING) console.log(e, info);
+  //if (IS_DEBUGGING) console.log(e, info);
   
 });
 
@@ -302,7 +305,7 @@ $(document).on('click', "#btnCrushOnce", function(evt)
 
   if (isShowingMove) removeSuggestedArrow();
 
-  $("#cellLocation").prop("disabled", true);
+  cellLocationTextarea.prop("disabled", true);
 
   rules.removeCrushes(rules.getCandyCrushes());
 
@@ -330,8 +333,8 @@ $(document).on('keydown', function(evt) {
 // Detect and parse input immediately when user is typing
 $(document).on("keyup blur change", function(evt) {
   // Your code here.
-  cellLocation = $("#cellLocation").val();
-  if (IS_DEBUGGING) console.log(cellLocation);
+  if (cellLocationTextarea !== undefined) cellLocation = cellLocationTextarea.val();
+  //if (IS_DEBUGGING) console.log(cellLocation);
 
   if (validateMoveInput(cellLocation)) {
     let col = COLUMN_NAME.indexOf(cellLocation[0]);
@@ -366,7 +369,7 @@ $(document).on('click', function(e) {
     if (IS_DEBUGGING) console.log(row, col, board.getCandyAt(row, col));
     
     cellLocation = COLUMN_NAME[col] + ROW_NAME[row].toString();
-    $("#cellLocation").val(cellLocation);
+    cellLocationTextarea.val(cellLocation);
     console.log(cellLocation);
     
     if (validateMoveInput(cellLocation)) {
@@ -435,17 +438,48 @@ $(document).on('click', "#btnShowMove", function(evt) {
 });
 
 function canvasMouseDown(e) {
+  if (IS_DEBUGGING) console.log("canvasMouseDown");
+
   // tell the browser we're handling this mouse event
   e.preventDefault();
   e.stopPropagation();
 
-  
+  if (e.clientX >= canvasOffset.left && e.clientX <= canvasOffset.left + CANVAS_SIZE &&
+    e.clientY >= canvasOffset.top && e.clientY <= canvasOffset.top + CANVAS_SIZE) {
+
+    let col = Math.floor((e.clientX - canvasOffset.left)/cellSize);
+    let row = Math.floor((e.clientY-canvasOffset.top)/cellSize);
+    
+    cellLocation = COLUMN_NAME[col] + ROW_NAME[row].toString();
+    $("#cellLocation").val(cellLocation);
+    
+    if (IS_DEBUGGING) console.log(row, col, board.getCandyAt(row, col));
+    
+    isDragging = true;
+    isDragged[row][col] = true;
+
+    if (IS_DEBUGGING) console.log("isDragging = " + isDragging + ", isDragged[" + row + "] = " + isDragged[row]
+      + ", isDragged[" + row + "][" + col + "] = " + isDragged[row][col]);
+    
+    draggingStartMouseX = e.clientX;
+    draggingStartMouseY = e.clientY;
+  }
 }
 
 function canvasMouseUp(e) {
-  
+  if (IS_DEBUGGING) console.log("canvasMouseUp"); 
+
+  isDragging = false;
+  for (let i = 0; i < boardSize; i++) {
+    isDragged[i] = new Array(boardSize);
+    for (let j = 0; j < boardSize; j++) {
+      isDragged[i][j] = false;
+    }
+  }
+
+  if (IS_DEBUGGING) console.log("isDragging = " + isDragging + ", isDragged = " + isDragged);
 }
 
 function canvasMouseMove(e) {
-  
+  //if (IS_DEBUGGING) console.log("canvasMouseMove");
 }
