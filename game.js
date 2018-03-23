@@ -50,14 +50,18 @@ var cellLocation = "";  // User input
 var cellSize = CANVAS_SIZE / boardSize;
 let canvas;
 let context; 
-let canvasOffset = 0;
+let canvasOffset;
 let lastColor = "black";
 let suggestedMove = [-1, -1];
 let isShowingMove = false;
 let draggingStartMouseX = 0;
 let draggingStartMouseY = 0;
 let isDragging = false;
-let isDragged = new Array(boardSize);
+let draggedCandyRow = -1;
+let draggedCandyCol = -1;
+let draggedCandyX = 0;
+let draggedCandyY = 0;
+let dragDirection = "";
 let suggestedArrow;
 
 var initCandyImages = function() {
@@ -92,7 +96,7 @@ var moveCandy = function(col, row, direction) {
 
   var selectedCandy = board.getCandyAt(row, col);
   var targetCandy = board.getCandyInDirection(selectedCandy, direction);
-  if (IS_DEBUGGING) console.log(targetCandy.row, targetCandy.col);
+  if (IS_DEBUGGING) console.log(targetCandy);
 
   context.clearRect(col*cellSize, row*cellSize, CANVAS_SIZE, CANVAS_SIZE);
   context.clearRect(targetCandy.col*cellSize, targetCandy.row*cellSize, CANVAS_SIZE, CANVAS_SIZE);
@@ -160,15 +164,6 @@ $(document).ready(function()
   canvas.onmousedown = canvasMouseDown;
   canvas.onmouseup = canvasMouseUp;
   canvas.onmousemove = canvasMouseMove;
-
-  // Initiating variables for dragging
-  isDragging = false;
-  for (let i = 0; i < boardSize; i++) {
-    isDragged[i] = new Array(boardSize);
-    for (let j = 0; j < boardSize; j++) {
-      isDragged[i][j] = false;
-    }
-  }
 
   // Scoreboard
   $("#score").css("background-color", "#000000");
@@ -363,8 +358,8 @@ $(document).on('click', function(e) {
   if (e.clientX >= canvasOffset.left && e.clientX <= canvasOffset.left + CANVAS_SIZE &&
     e.clientY >= canvasOffset.top && e.clientY <= canvasOffset.top + CANVAS_SIZE) {
 
-    let col = Math.floor((e.clientX - canvasOffset.left)/cellSize);
-    let row = Math.floor((e.clientY-canvasOffset.top)/cellSize);
+    let col = Math.round((e.clientX - canvasOffset.left)/cellSize);
+    let row = Math.round((e.clientY-canvasOffset.top)/cellSize);
     
     if (IS_DEBUGGING) console.log(row, col, board.getCandyAt(row, col));
     
@@ -444,42 +439,97 @@ function canvasMouseDown(e) {
   e.preventDefault();
   e.stopPropagation();
 
+  // If the mouse is inside the board
   if (e.clientX >= canvasOffset.left && e.clientX <= canvasOffset.left + CANVAS_SIZE &&
     e.clientY >= canvasOffset.top && e.clientY <= canvasOffset.top + CANVAS_SIZE) {
 
-    let col = Math.floor((e.clientX - canvasOffset.left)/cellSize);
-    let row = Math.floor((e.clientY-canvasOffset.top)/cellSize);
-    
-    cellLocation = COLUMN_NAME[col] + ROW_NAME[row].toString();
-    $("#cellLocation").val(cellLocation);
-    
-    if (IS_DEBUGGING) console.log(row, col, board.getCandyAt(row, col));
+    // Save starting location
+    draggingStartMouseX = e.clientX - canvasOffset.left;
+    draggingStartMouseY = e.clientY - canvasOffset.top;
+
+    // Find the selected candy's location
+    draggedCandyCol = Math.floor((e.clientX - canvasOffset.left)/cellSize);
+    draggedCandyRow = Math.floor((e.clientY-canvasOffset.top)/cellSize);
+    draggedCandyX = draggedCandyCol*cellSize;
+    draggedCandyY = draggedCandyRow*cellSize;
     
     isDragging = true;
-    isDragged[row][col] = true;
 
-    if (IS_DEBUGGING) console.log("isDragging = " + isDragging + ", isDragged[" + row + "] = " + isDragged[row]
-      + ", isDragged[" + row + "][" + col + "] = " + isDragged[row][col]);
-    
-    draggingStartMouseX = e.clientX;
-    draggingStartMouseY = e.clientY;
+    if (IS_DEBUGGING) console.log("isDragging = " + isDragging);
   }
 }
 
 function canvasMouseUp(e) {
   if (IS_DEBUGGING) console.log("canvasMouseUp"); 
-
+  
   isDragging = false;
-  for (let i = 0; i < boardSize; i++) {
-    isDragged[i] = new Array(boardSize);
-    for (let j = 0; j < boardSize; j++) {
-      isDragged[i][j] = false;
-    }
-  }
+  if (IS_DEBUGGING) console.log("isDragging = " + isDragging);
 
-  if (IS_DEBUGGING) console.log("isDragging = " + isDragging + ", isDragged = " + isDragged);
+  // Get the column and row number of where the dragged candy is
+  console.log("Final destination of the candy: " + draggedCandyX + ", " + draggedCandyY);
+  let col = Math.round(draggedCandyX/cellSize);
+  let row = Math.round(draggedCandyY/cellSize);
+
+  if (row > draggedCandyRow) dragDirection = "down";
+  if (row < draggedCandyRow) dragDirection = "up";
+  if (col > draggedCandyCol) dragDirection = "right";
+  if (col < draggedCandyCol) dragDirection = "left";
+
+  if (rules.isMoveTypeValid(board.getCandyAt(draggedCandyRow, draggedCandyCol), dragDirection)) {
+    console.log("Moved " + dragDirection + " from (" + draggedCandyRow + ", " + draggedCandyCol + ") to ("+ row + ", " + col + ") -- valid move!!!")
+    
+    moveCandy(draggedCandyCol, draggedCandyRow, dragDirection);
+    
+    // Clear the board and redraw other candies
+    context.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+    updateBoard();
+  
+  } else {
+    console.log("Moved " + dragDirection + " from (" + draggedCandyRow + ", " + draggedCandyCol + ") to ("+ row + ", " + col + ") -- invalid move!!!");
+
+    // Clear the board and redraw all candies
+    context.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+    updateBoard();
+  }
 }
 
 function canvasMouseMove(e) {
-  //if (IS_DEBUGGING) console.log("canvasMouseMove");
+  if (isDragging) {
+    // tell the browser we're handling this mouse event
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Current location of the mouse
+    let mouseX = e.clientX - canvasOffset.left;
+    let mouseY = e.clientY - canvasOffset.top;
+
+    // Calculate the distance of mouse movement
+    let dx = mouseX - draggingStartMouseX;
+    let dy = mouseY - draggingStartMouseY;
+
+    // Update the candy's new location
+    draggedCandyX += dx;
+    draggedCandyY += dy;
+
+    console.log("Mouse location on the canvas: " + draggedCandyX + ", " + draggedCandyY);
+
+    // Update the new starting location for another iteration
+    draggingStartMouseX = mouseX;
+    draggingStartMouseY = mouseY;
+
+    // Get the candy's image
+    let img = document.getElementById(board.getCandyAt(draggedCandyRow, draggedCandyCol).color + "-candy");
+
+    // Clear the board and redraw other candies
+    context.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+    updateBoard();
+
+    // Put an empty slot at the dragged candy
+    context.clearRect(draggedCandyCol*cellSize, draggedCandyRow*cellSize, cellSize, cellSize);    
+
+    // Draw candy at the new location
+    context.drawImage(img, draggedCandyX, draggedCandyY, cellSize, cellSize);
+
+
+  }
 }
