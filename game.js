@@ -57,6 +57,7 @@ let draggingStartMouseX = 0;
 let draggingStartMouseY = 0;
 let isDragging = false;
 let isDragged = new Array(boardSize);
+let suggestedArrow;
 
 var initCandyImages = function() {
   $("#canvas").prepend("<img id='blue-candy' src='graphics/blue-candy.png' />");
@@ -144,16 +145,20 @@ $(document).ready(function()
   
   // Canvas.
   canvas = document.getElementById("canvas");
-  console.log(canvas);
+  canvasOffset = $('#canvas').offset();
+  if (IS_DEBUGGING) console.log(canvasOffset);
 
-  // listen for mouse events on canvas.
+  // Context.
+  context = canvas.getContext("2d");
+  context.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+
+  // Listen for mouse events on canvas.
+  // Reference: https://stackoverflow.com/questions/28284754/dragging-shapes-using-mouse-after-creating-them-with-html5-canvas
   canvas.onmousedown = canvasMouseDown;
   canvas.onmouseup = canvasMouseUp;
   canvas.onmousemove = canvasMouseMove;
 
-  context = canvas.getContext("2d");
-  context.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
-
+  // Initiating variables for dragging
   isDragging = false;
   for (let i = 0; i < boardSize; i++) {
     isDragged[i] = new Array(boardSize);
@@ -162,17 +167,17 @@ $(document).ready(function()
     }
   }
 
+  // Scoreboard
   $("#score").css("background-color", "#000000");
   $("#score").css("color", "#ffffff");
 
   // Suggestion arrow
-  $("#suggestedArrow").attr("width", cellSize);
-  $("#suggestedArrow").hide();
+  suggestedArrow = $("#suggestedArrow");
+  suggestedArrow.attr("width", cellSize);
+  suggestedArrow.hide();
 
   rules.prepareNewGame();
   updateBoard();
-
-  console.log($("#mainColumn"));
 });
 
 
@@ -352,7 +357,6 @@ $(document).on("keyup blur change", function(evt) {
 
 // Click a candy to select
 $(document).on('click', function(e) {
-  console.log(e);
   if (e.clientX >= canvasOffset.left && e.clientX <= canvasOffset.left + CANVAS_SIZE &&
     e.clientY >= canvasOffset.top && e.clientY <= canvasOffset.top + CANVAS_SIZE) {
 
@@ -411,13 +415,18 @@ $(document).on('click', "#btnShowMove", function(evt) {
   if (IS_DEBUGGING) console.log("btnShowMove clicked");
 
   if (!isShowingMove) {
-    let candy = rules.getRandomValidMove().candy;
-    if (IS_DEBUGGING) console.log(candy);    
+    let move = rules.getRandomValidMove();
+    if (IS_DEBUGGING) console.log(move);    
 
-    //context.drawImage(arrow, (candy.col-0.5)*cellSize, candy.row*cellSize, cellSize, cellSize);
-    $("#suggestedArrow").css("margin-left:" + ($("mainColumn").offsetLeft + (candy.col-0.5)*cellSize) + "px");
-    $("#suggestedArrow").css("margin-top:" + (candy.row*cellSize) + "px");
-    $("#suggestedArrow").show();
+    let tempX = 0;//canvasOffset.left + (move.candy.col-0.5)*cellSize;
+    let tempY = 0;//canvasOffset.top + move.candy.row*cellSize;
+
+    console.log(tempX, tempY, canvasOffset);
+
+    suggestedArrow.css("margin-left", tempX + "px");
+    suggestedArrow.css("margin-top", tempY + "px");
+    if (IS_DEBUGGING) console.log(suggestedArrow.position());
+    suggestedArrow.show();
 
     isShowingMove = true;
   } else {
@@ -426,7 +435,11 @@ $(document).on('click', "#btnShowMove", function(evt) {
 });
 
 function canvasMouseDown(e) {
+  // tell the browser we're handling this mouse event
+  e.preventDefault();
+  e.stopPropagation();
 
+  
 }
 
 function canvasMouseUp(e) {
