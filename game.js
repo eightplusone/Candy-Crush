@@ -45,8 +45,6 @@ if ($.getUrlVar('size') && $.getUrlVar('size') >= 3) {
 rules = new Rules(board);
 
 var boardSize = board.getSize();
-let cellLocationTextarea;
-var cellLocation = "";  // User input
 var cellSize = CANVAS_SIZE / boardSize;
 let canvas;
 let context; 
@@ -74,49 +72,45 @@ var initCandyImages = function() {
   $("#canvas").prepend("<img id='arrow' src='graphics/arrow.png' />");
 }
 
-// Disable all arrow buttons at the beginning and when there is no possible move (including invalid input).
-var lockArrowButtons = function() {
-    $("#btnUpArrow").prop("disabled", true);
-    $("#btnDownArrow").prop("disabled", true);
-    $("#btnLeftArrow").prop("disabled", true);
-    $("#btnRightArrow").prop("disabled", true);
-    $("#btnCrushOnce").prop("disabled", true);
-}
-
-// Check if user's input is valid (column ranges from "a" to "h", row ranges from 1 to 8, input contains exactly two characters)
-var validateMoveInput = function(cellLocation) {
-  return (cellLocation.length > 0 && cellLocation.length <= 3 && 
-    COLUMN_NAME.indexOf(cellLocation[0].toLowerCase()) != -1 && 
-    parseInt(cellLocation[1]) >= 0 && parseInt(cellLocation[1]) <= boardSize);
-}
-
 // Flip two candies
 var moveCandy = function(col, row, direction) {
   if (IS_DEBUGGING) console.log(COLUMN_NAME[col] + row.toString() + ", " + direction);
 
-  var selectedCandy = board.getCandyAt(row, col);
-  var targetCandy = board.getCandyInDirection(selectedCandy, direction);
-  if (IS_DEBUGGING) console.log(targetCandy);
+  let selectedCandy = board.getCandyAt(row, col);
+  let targetCandy = board.getCandyInDirection(selectedCandy, direction);
 
-  context.clearRect(col*cellSize, row*cellSize, CANVAS_SIZE, CANVAS_SIZE);
-  context.clearRect(targetCandy.col*cellSize, targetCandy.row*cellSize, CANVAS_SIZE, CANVAS_SIZE);
+  /*
+  let selectedCandyX = col*cellSize;
+  let selectedCandyY = row*cellSize;
+  let targetCandyX = targetCandy.col*cellSize;
+  let targetCandyY = targetCandy.row*cellSize;
+  let startX = col*cellSize;
+  let startY = row*cellSize;
+  let endX = targetCandy.col*cellSize;
+  let endY = targetCandy.row*cellSize;
+  let selectedImg = document.getElementById(selectedCandy.color + "-candy");
+  let targetImg = document.getElementById(targetCandy.color + "-candy");
+
+  setTimeout(function() { 
+    context.clearRect(selectedCandyX, selectedCandyY, cellSize, cellSize);
+    context.clearRect(targetCandyX, targetCandyY, cellSize, cellSize);
+
+    if (endX != startX) {
+      selectedCandyX += Math.abs(endX-startX)/(endX-startX);  // 1 or -1
+      targetCandyX -= Math.abs(endX-startX)/(endX-startX);  // 1 or -1
+    }
+    if (endY != startY) {
+      selectedCandyY += Math.abs(endY-startY)/(endY-startY);  // 1 or -1
+      targetCandyY -= Math.abs(endY-startY)/(endY-startY);  // 1 or -1
+    }
+    
+    context.drawImage(selectedImg, selectedCandyX, selectedCandyY, cellSize, cellSize);
+    context.drawImage(targetImg, targetCandyX, targetCandyY, cellSize, cellSize);
+  }, 1000);
+  */
+  
   lastColor = selectedCandy.color;
   board.flipCandies(selectedCandy, targetCandy);
-}
-
-// After a move is done, clear the user's input and re-focus on the text field.
-var clearAndFocusTextField = function() {
-  let cellLocationTextarea = $("#cellLocation");
-  cellLocationTextarea.val("");
-
-  if (rules.getCandyCrushes().length == 0) {
-    cellLocationTextarea.prop("disabled", false);
-    cellLocationTextarea.focus();
-  } else {
-    cellLocationTextarea.prop("disabled", true);
-  }
-  
-  cellLocation = "";
 }
 
 var updateCandyLocation = function() {
@@ -130,15 +124,10 @@ var updateCandyLocation = function() {
 
 // Group functions that are called together at the end of each flip or crush.
 //  - Update the latest position of each candy.
-//  - Clear any value in the text field and re-focus to it.
-//  - Lock the arrow buttons as the text field is empty.
 //  - Check if there is any crush.
 var updateBoard = function() {
   updateCandyLocation();
-  clearAndFocusTextField();
-  lockArrowButtons();
-
-  if (rules.getCandyCrushes().length > 0) $("#btnCrushOnce").prop("disabled", false);
+  if (rules.getCandyCrushes().length > 0) crush();
 } 
 
 // Final initialization entry point: the Javascript code inside this block
@@ -186,6 +175,29 @@ $(document).ready(function()
 $(board).on('add', function(e, info)
 {
   // Your code here.
+  //if (IS_DEBUGGING) console.log(e, info);
+
+  let currY = -cellSize;
+  let currX = info.candy.toCol * cellSize;
+  let targetY = info.toRow * cellSize;
+  let targetX = info.toCol * cellSize;
+  let img = document.getElementById(info.candy.color + "-candy");  
+  context.drawImage(img, currX, currY, cellSize, cellSize);
+  
+  /*
+  while (currY < targetY) {
+    if (IS_DEBUGGING) console.log(currY, targetY);
+
+    // Put an empty slot at the dragged candy
+    context.clearRect(currX, currY, cellSize, cellSize);
+
+    // Update location
+    currY++;
+
+    // Draw candy at the new location
+    context.drawImage(img, currX, currY, cellSize, cellSize);
+  }
+  */
 });
 
 // move a candy on the board
@@ -193,13 +205,48 @@ $(board).on('move', function(e, info)
 {
   // Your code here.
   //if (IS_DEBUGGING) console.log(e, info);
+
+  let currY = info.candy.fromRow * cellSize;
+  let currX = info.candy.fromCol * cellSize;
+  let targetY = info.candy.toRow * cellSize;
+  let targetX = info.candy.toCol * cellSize;
+  let color = info.candy.color;
+
+  /*
   
+  while (targetX != currX && targetY != currY) {
+    context.clearRect(currX, currY, cellSize, cellSize);
+
+    if (targetX != currX) 
+      currX += Math.abs(targetX-currX) / (targetX-currX);  // 1 or -1
+    if (targetY != currY) 
+      currY += Math.abs(targetY-currY) / (targetY-currY);  // 1 or -1
+
+    // Get the candy's image
+    let img = document.getElementById(color + "-candy");   
+
+    // Draw candy at the new location
+    context.drawImage(img, currX, currY, cellSize, cellSize);
+  }
+  */
 });
 
 // remove a candy from the board
 $(board).on('remove', function(e, info)
 {
   // Your code here.
+  let row = info.candy.fromRow;
+  let col = info.candy.fromCol;
+
+  context.clearRect(col*cellSize, row*cellSize, cellSize, cellSize);
+
+  if (IS_DEBUGGING) console.log("remove a candy " + info.candy.color);
+
+  let img = document.getElementById(info.candy.color + "-candy");
+  context.save();
+  context.globalAlpha = 0.4;
+  context.drawImage(img, col*cellSize, row*cellSize, cellSize, cellSize);
+  context.restore();
 });
 
 // move a candy on the board
@@ -235,176 +282,28 @@ $(document).on('click', "#btnNewGame", function(evt)
   updateBoard();
 });
 
-
-$(document).on('click', "#btnUpArrow", function(evt)
-{
-  // Your code here.
-  if (IS_DEBUGGING) console.log("btnUpArrow clicked.");
-
-  if (isShowingMove) removeSuggestedArrow();
-
-  let col = COLUMN_NAME.indexOf(cellLocation[0]);
-  let row = parseInt(cellLocation.substring(1, cellLocation.length))-1;
-  moveCandy(col, row, "up");
-  updateBoard();
-});
-
-
-$(document).on('click', "#btnDownArrow", function(evt)
-{
-  // Your code here.
-  if (IS_DEBUGGING) console.log("btnDownArrow clicked.");
-
-  if (isShowingMove) removeSuggestedArrow();
-
-  let col = COLUMN_NAME.indexOf(cellLocation[0]);
-  let row = parseInt(cellLocation.substring(1, cellLocation.length))-1;
-  moveCandy(col, row, "down");
-  updateBoard();
-});
-
-
-$(document).on('click', "#btnLeftArrow", function(evt)
-{
-  // Your code here.
-  if (IS_DEBUGGING) console.log("btnLeftArrow clicked.");
-
-  if (isShowingMove) removeSuggestedArrow();
-
-  let col = COLUMN_NAME.indexOf(cellLocation[0]);
-  let row = parseInt(cellLocation.substring(1, cellLocation.length))-1;
-  moveCandy(col, row, "left");
-  updateBoard();
-});
-
-
-$(document).on('click', "#btnRightArrow", function(evt)
-{
-  // Your code here.
-  if (IS_DEBUGGING) console.log("btnRightArrow clicked.");
-
-  if (isShowingMove) removeSuggestedArrow();
-
-  let col = COLUMN_NAME.indexOf(cellLocation[0]);
-  let row = parseInt(cellLocation.substring(1, cellLocation.length))-1;
-  moveCandy(col, row, "right");
-  updateBoard();
-});
-
-
-// Crush button
-$(document).on('click', "#btnCrushOnce", function(evt)
-{
-  // Your code here.
-  if (IS_DEBUGGING) console.log("btnCrushOnce clicked.");
-
-  if (isShowingMove) removeSuggestedArrow();
-
-  cellLocationTextarea.prop("disabled", true);
-
+function crush() {
   rules.removeCrushes(rules.getCandyCrushes());
 
   // After a crush is removed, the system waits 0.5 second to
   //   - Move candies down
   //   - Re-populate the board
-  //   - Accept new input
   //   - Redraw the whole board
   setTimeout(function() {
     rules.moveCandiesDown();
     context.clearRect(0,0,CANVAS_SIZE, CANVAS_SIZE);
     rules.populateBoard();
-    $("#cellLocation").prop("disabled", false);
     updateBoard();
   }, 500);
-});
-
+}
 
 // keyboard events arrive here
 $(document).on('keydown', function(evt) {
   // Your code here.
 });
 
-
-// Detect and parse input immediately when user is typing
-$(document).on("keyup blur change", function(evt) {
-  // Your code here.
-  if (cellLocationTextarea !== undefined) cellLocation = cellLocationTextarea.val();
-  //if (IS_DEBUGGING) console.log(cellLocation);
-
-  if (validateMoveInput(cellLocation)) {
-    let col = COLUMN_NAME.indexOf(cellLocation[0]);
-    let row = parseInt(cellLocation.substring(1, cellLocation.length))-1;
-    let selectedCandy = board.getCandyAt(row, col);
-
-    if (rules.isMoveTypeValid(selectedCandy, "up")) $("#btnUpArrow").prop("disabled", false);
-    if (rules.isMoveTypeValid(selectedCandy, "down")) $("#btnDownArrow").prop("disabled", false);
-    if (rules.isMoveTypeValid(selectedCandy, "left")) $("#btnLeftArrow").prop("disabled", false);
-    if (rules.isMoveTypeValid(selectedCandy, "right")) $("#btnRightArrow").prop("disabled", false);
-
-    if (rules.getCandyCrushes().length > 0) {
-      $("#btnCrushOnce").prop("disabled", false);
-      $("#cellLocation").disabled = true;
-    } else {
-      $("#cellLocation").disabled = false;
-    }
-
-  } else {
-    lockArrowButtons();
-  }
-});
-
-// Click a candy to select
-$(document).on('click', function(e) {
-  if (e.clientX >= canvasOffset.left && e.clientX <= canvasOffset.left + CANVAS_SIZE &&
-    e.clientY >= canvasOffset.top && e.clientY <= canvasOffset.top + CANVAS_SIZE) {
-
-    let col = Math.round((e.clientX - canvasOffset.left)/cellSize);
-    let row = Math.round((e.clientY-canvasOffset.top)/cellSize);
-    
-    if (IS_DEBUGGING) console.log(row, col, board.getCandyAt(row, col));
-    
-    cellLocation = COLUMN_NAME[col] + ROW_NAME[row].toString();
-    cellLocationTextarea.val(cellLocation);
-    console.log(cellLocation);
-    
-    if (validateMoveInput(cellLocation)) {
-      var selectedCandy = board.getCandyAt(row, col);
-  
-      if (rules.isMoveTypeValid(selectedCandy, "up")) $("#btnUpArrow").prop("disabled", false);
-      if (rules.isMoveTypeValid(selectedCandy, "down")) $("#btnDownArrow").prop("disabled", false);
-      if (rules.isMoveTypeValid(selectedCandy, "left")) $("#btnLeftArrow").prop("disabled", false);
-      if (rules.isMoveTypeValid(selectedCandy, "right")) $("#btnRightArrow").prop("disabled", false);
-  
-      if (rules.getCandyCrushes().length > 0) {
-        $("#btnCrushOnce").prop("disabled", false);
-        $("#cellLocation").disabled = true;
-      }
-  
-    } else {
-      lockArrowButtons();
-    }
-  }
-});
-
 let removeSuggestedArrow = function() {
-  /*
-  if (row > 0 && col > 0) {
-    let leftCandy = board.getCandyAt(row, col-1);
-    let suggestedCandy = board.getCandyAt(row, col);
-  
-    if (IS_DEBUGGING) console.log(board.square, leftCandy, suggestedCandy);
-  
-    context.clearRect((col-1)*cellSize, row*cellSize, cellSize*2, cellSize);
-    
-    let img = document.getElementById(leftCandy.color + "-candy");
-    context.drawImage(img, (col-1)*cellSize, row*cellSize, cellSize, cellSize);
-  
-    img = document.getElementById(suggestedCandy.color + "-candy");
-    context.drawImage(img, col*cellSize, row*cellSize, cellSize, cellSize);
-  }
-  */
   $("#suggestedArrow").hide();
-
   isShowingMove = false;
 }
 
@@ -416,10 +315,10 @@ $(document).on('click', "#btnShowMove", function(evt) {
     let move = rules.getRandomValidMove();
     if (IS_DEBUGGING) console.log(move);    
 
-    let tempX = 0;//canvasOffset.left + (move.candy.col-0.5)*cellSize;
-    let tempY = 0;//canvasOffset.top + move.candy.row*cellSize;
+    let tempX = (move.candy.col-0.5)*cellSize; // + canvasOffset.left
+    let tempY = move.candy.row*cellSize; // + canvasOffset.top
 
-    console.log(tempX, tempY, canvasOffset);
+    if (IS_DEBUGGING) console.log(tempX, tempY, canvasOffset);
 
     suggestedArrow.css("margin-left", tempX + "px");
     suggestedArrow.css("margin-top", tempY + "px");
@@ -438,6 +337,8 @@ function canvasMouseDown(e) {
   // tell the browser we're handling this mouse event
   e.preventDefault();
   e.stopPropagation();
+
+  if (isShowingMove) removeSuggestedArrow();
 
   // If the mouse is inside the board
   if (e.clientX >= canvasOffset.left && e.clientX <= canvasOffset.left + CANVAS_SIZE &&
@@ -466,17 +367,20 @@ function canvasMouseUp(e) {
   if (IS_DEBUGGING) console.log("isDragging = " + isDragging);
 
   // Get the column and row number of where the dragged candy is
-  console.log("Final destination of the candy: " + draggedCandyX + ", " + draggedCandyY);
+  if (IS_DEBUGGING) console.log("Final destination of the candy: " + draggedCandyX + ", " + draggedCandyY);
   let col = Math.round(draggedCandyX/cellSize);
   let row = Math.round(draggedCandyY/cellSize);
 
+  // Get direction of the movement
   if (row > draggedCandyRow) dragDirection = "down";
   if (row < draggedCandyRow) dragDirection = "up";
   if (col > draggedCandyCol) dragDirection = "right";
   if (col < draggedCandyCol) dragDirection = "left";
 
   if (rules.isMoveTypeValid(board.getCandyAt(draggedCandyRow, draggedCandyCol), dragDirection)) {
-    console.log("Moved " + dragDirection + " from (" + draggedCandyRow + ", " + draggedCandyCol + ") to ("+ row + ", " + col + ") -- valid move!!!")
+    if (IS_DEBUGGING) console.log("Moved " + dragDirection + 
+      " from (" + draggedCandyRow + ", " + draggedCandyCol + 
+      ") to ("+ row + ", " + col + ") -- valid move!!!");
     
     moveCandy(draggedCandyCol, draggedCandyRow, dragDirection);
     
@@ -485,7 +389,9 @@ function canvasMouseUp(e) {
     updateBoard();
   
   } else {
-    console.log("Moved " + dragDirection + " from (" + draggedCandyRow + ", " + draggedCandyCol + ") to ("+ row + ", " + col + ") -- invalid move!!!");
+    if (IS_DEBUGGING) console.log("Moved " + dragDirection + 
+      " from (" + draggedCandyRow + ", " + draggedCandyCol + 
+      ") to ("+ row + ", " + col + ") -- invalid move!!!");
 
     // Clear the board and redraw all candies
     context.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
@@ -510,8 +416,7 @@ function canvasMouseMove(e) {
     // Update the candy's new location
     draggedCandyX += dx;
     draggedCandyY += dy;
-
-    console.log("Mouse location on the canvas: " + draggedCandyX + ", " + draggedCandyY);
+    if (IS_DEBUGGING) console.log("Mouse location on the canvas: " + draggedCandyX + ", " + draggedCandyY);
 
     // Update the new starting location for another iteration
     draggingStartMouseX = mouseX;
@@ -529,7 +434,5 @@ function canvasMouseMove(e) {
 
     // Draw candy at the new location
     context.drawImage(img, draggedCandyX, draggedCandyY, cellSize, cellSize);
-
-
   }
 }
